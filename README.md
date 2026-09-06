@@ -216,7 +216,6 @@ Durante el desarrollo de esta arquitectura se presentaron varios desafíos reale
 ---
 
 ## 8. Integrantes del Proyecto (Grupo 7)
-- **Alejandro Rodríguez** (Ingeniería de Datos / Pipeline & Lakehouse)
-- Integrante 2
-- Integrante 3
-- Integrante 4
+- Nicole Valeria
+- Juan Esteban Viera Cano
+- Alejandro Rodríguez
