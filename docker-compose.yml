@@ -1,0 +1,126 @@
+# stack de contenedores para el proyecto 1
+# levantamos el minion, messi, clickhaus y jupyter en la misma red
+
+services:
+  # data guys este es el MINION (Data Lake)
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio_lakehouse
+    ports:
+      - "9000:9000"   # puerto api s3 para ingesta y lectura
+      - "9001:9001"   # consola web para mirar los buckets
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_REGION=us-east-1
+    volumes:
+      - minio_data:/data
+    # se que ustedes saben que es un volumen pero por si las moscas esto hace
+    # que si se apaga el contenedor los datos que se traen del taxi no se boten
+    entrypoint: >
+      /bin/sh -c "
+      minio server /data --console-address ':9001' &
+      sleep 5;
+      mc alias set myminio http://localhost:9000 admin password;
+      mc mb myminio/taxis --ignore-existing;
+      mc mb myminio/warehouse --ignore-existing;
+      tail -f /dev/null"
+    networks:
+      - lakehouse-net
+
+  # este es el catalogo de MESSI
+  nessie:
+    image: ghcr.io/projectnessie/nessie:latest
+    container_name: nessie_catalog
+    user: root # permisos para que messi pueda escribir en el volumen de rocksdb sin permission denied
+    ports:
+      - "19120:19120" # puerto api rest del catalogo
+    environment:
+      # el profe dijo que no usar IN_MEMORY
+      # al parecer messi siempre usa IN_MEMORY por defecto y borra todo al reiniciar
+      # le ponemos ROCKSDB con volumen para que no se nos borren las tablas
+      - nessie.version.store.type=ROCKSDB
+      - nessie.version.store.persist.rocks.database-path=/nessie/data
+      
+      # aqui conectamos a messi con el MINION como warejaus
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3://warehouse/
+      - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
+      - nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
+      - nessie.catalog.service.s3.default-options.path-style-access=true
+      - nessie.catalog.service.s3.default-options.auth-type=STATIC
+      - nessie.catalog.secrets.access-key.name=admin
+      - nessie.catalog.secrets.access-key.secret=password
+      - nessie.catalog.service.s3.default-options.region=us-east-1
+      - nessie.server.authentication.enabled=false
+    volumes:
+      - nessie_data:/nessie/data
+    networks:
+      - lakehouse-net
+    depends_on:
+      - minio
+
+  # este es clickhaus (el motor olap para analitica)
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse_olap
+    ports:
+      - "8123:8123"   # puerto http que usa dlt y python
+      - "9002:9000"   # puerto nativo tcp (lo mapeamos al 9002 en windows para no chocar con el 9000 del minion)
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - lakehouse-net
+
+  # aqui corre jupyter donde vamos a ejecutar los 4 notebooks
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.4.1
+    container_name: jupyter_workspace
+    ports:
+      - "8888:8888"   # interfaz web de jupyter lab
+    environment:
+      # credenciales para que jupyter pueda hablar con el minion
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_REGION=us-east-1
+      - AWS_S3_ENDPOINT=http://minio:9000
+    volumes:
+      # montamos la carpeta donde estan los 4 notebooks
+      - ./notebooks:/workspace
+      # montamos el txt con las librerias para que se instalen solas al iniciar
+      # acordarse que el profe prohibio poner pip install dentro de las celdas
+      - ./requirements.txt:/tmp/requirements.txt
+      # montamos la carpeta de secretos de dlt
+      - ./.dlt:/workspace/.dlt
+      - ./.dlt:/home/jovyan/.dlt
+    working_dir: /workspace
+    command: >
+      bash -c "
+      pip install --no-cache-dir -r /tmp/requirements.txt &&
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' &&
+      tail -f /dev/null"
+    networks:
+      - lakehouse-net
+    depends_on:
+      - minio
+      - nessie
+      - clickhouse
+
+# la red para que todos los contenedores se hablen entre si
+networks:
+  lakehouse-net:
+    driver: bridge
+
+# los volumenes para que la info persista en el disco y no se borre nada
+volumes:
+  minio_data:
+    name: lakehouse_minio_data
+  nessie_data:
+    name: lakehouse_nessie_data
+  clickhouse_data:
+    name: lakehouse_clickhouse_data

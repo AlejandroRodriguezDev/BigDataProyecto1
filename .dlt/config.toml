@@ -1,0 +1,4 @@
+# configuracion general de dlt
+[runtime]
+dlthub_telemetry = false # apagamos la telemetria para que no mande datos a internet
+log_level = "INFO"

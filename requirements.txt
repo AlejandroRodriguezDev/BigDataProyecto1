@@ -1,0 +1,26 @@
+# librerias que jupyter instala solo al iniciar el docker
+# nada de poner pip install en las celdas porque el profe baja nota
+
+# filesistem y clickhaus (ingesta y orquestacion con dlt)
+dlt[filesystem]>=1.15.0
+dlt[clickhouse]>=1.15.0
+
+# apache iceberg y messi
+pyiceberg[s3fs]>=0.7.0
+
+# parquet y procesamiento columnar
+pyarrow>=15.0.0
+
+# conectores para hablar con el minion y azure
+s3fs>=2024.2.0
+adlfs>=2024.2.0
+fsspec>=2024.2.0
+
+# cliente de python para conectarse a clickhaus
+clickhouse-connect>=0.7.0
+
+# cositas extra para peticiones y dataframes
+requests>=2.31.0
+pandas>=2.2.0
+numpy<2.0.0
+tomlkit>=0.12.0
