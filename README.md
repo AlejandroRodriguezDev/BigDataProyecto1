@@ -217,5 +217,5 @@ Durante el desarrollo de esta arquitectura se presentaron varios desafíos reale
 
 ## 8. Integrantes del Proyecto (Grupo 7)
 - Nicole Valeria Ruiz Valencia
-- Juan Esteban Viera Cano
+- Juan Estevan Viera Cano
 - Alejandro Rodríguez
