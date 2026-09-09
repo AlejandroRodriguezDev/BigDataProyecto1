@@ -30,3 +30,11 @@ Thumbs.db
 !.gitkeep
 !.env.example
 
+# Guias locales de estudio y sustentacion (no van al repo)
+COMO_FUNCIONAN_LAS_HERRAMIENTAS.md
+GUIA_CONCEPTUAL_DEL_PROYECTO.md
+GUION_DE_SUSTENTACION.md
+
+# Secretos y caches de dlt
+.dlt/secrets.toml
+.dlt/pipelines/
