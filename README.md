@@ -73,8 +73,7 @@ BigDataProyecto1/
 ├── .gitignore                  # Exclusión de secretos, temporales, checkpoints y pipelines
 ├── docker-compose.yml          # Orquestación unificada de infraestructura (4 contenedores)
 ├── requirements.txt            # Dependencias preinstaladas (Cero %pip en celdas de Jupyter)
-├── GUIA_CONCEPTUAL_DEL_PROYECTO.md # Guía teórica detallada para sustentación oral
-├── COMO_FUNCIONAN_LAS_HERRAMIENTAS.md # Explicación profunda de cada herramienta
+├── PROYECTO 1 - FYHBD - S5.pdf # Documento de enunciados y rúbrica oficial
 └── README.md                   # Documentación técnica completa y bitácora de resolución
 ```
 
